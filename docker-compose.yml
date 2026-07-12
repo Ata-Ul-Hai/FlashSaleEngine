@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    networks:
+      - flash_network
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    depends_on:
+      -  postgres
+    
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    networks:
+      - flash_network
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+    depends_on:
+      -  postgres
+
+  # Reverse Proxy
+  traefik:
+    image: traefik:v3.0
+    ports:
+      - "80:80"
+    networks:
+      - flash_network
+
+  postgres:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports: 
+      -  "${DB_PORT}:5432"
+    networks:
+      - flash_network
+
+  redis:
+    image: redis:7
+    networks:
+      - flash_network
+
+networks:
+  flash_network:
+    #created an isolated network
+    driver: bridge 
