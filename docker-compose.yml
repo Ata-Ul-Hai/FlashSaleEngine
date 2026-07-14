@@ -7,8 +7,18 @@ services:
       - flash_network
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_HOST: redis
+      PORT: ${PORT}
     depends_on:
-      -  postgres
+      - postgres
+      - redis
+    labels:
+      - "traefik.enable=true" 
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
+      - "traefik.http.services.api.loadbalancer.server.port=${PORT}"
+      - "traefik.http.routers.api.middlewares=api-stripper" #? becuase api can lead to traefik docs api page
+      - "traefik.http.middlewares.api-stripper.stripprefix.prefixes=/api"
     
   worker:
     build:
@@ -18,33 +28,51 @@ services:
       - flash_network
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      REDIS_HOST: redis
     depends_on:
-      -  postgres
+      - postgres
+      - redis
 
   # Reverse Proxy
   traefik:
-    image: traefik:v3.0
+    image: traefik:3.7-alpine
+    command:
+      - "--api.insecure=true" #? For accesing the dashboard a big no in PRODUCTION
+      - "--providers.docker=true" #? to auto-discover containers in the dokcer 
+      - "--provider.docker.exposedbydefault=false" #? to only expose the label ones
+      - "entrypoint.web.address=:80" #? to listen on port 80
     ports:
       - "80:80"
+      - "8080:8080" # Traefik Dashboard (Development ke liye)
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro" #? Read-only permission for traefik to listen on to docker events
     networks:
       - flash_network
 
   postgres:
-    image: postgres:latest
+    image: postgres:18-alpine
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
     networks:
       - flash_network
 
   redis:
-    image: redis:7
+    image: redis:8-alpine
+    volumes:
+      - redis_data:/data
     networks:
       - flash_network
 
 networks:
   flash_network:
-    #created an isolated network
+    # created an isolated network
     driver: bridge 
+
+volumes:
+  pg_data:
+  redis_data:
