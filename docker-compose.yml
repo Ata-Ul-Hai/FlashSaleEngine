@@ -6,7 +6,7 @@ services:
     networks:
       - flash_network
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       REDIS_HOST: redis
       PORT: ${PORT}
     depends_on:
@@ -17,8 +17,8 @@ services:
       - "traefik.http.routers.api.entrypoints=web"
       - "traefik.http.routers.api.rule=PathPrefix(`/api`)"
       - "traefik.http.services.api.loadbalancer.server.port=${PORT}"
-      - "traefik.http.routers.api.middlewares=api-stripper" #? becuase api can lead to traefik docs api page
-      - "traefik.http.middlewares.api-stripper.stripprefix.prefixes=/api"
+      # - "traefik.http.routers.api.middlewares=api-stripper" #? becuase api can lead to traefik docs api page
+      # - "traefik.http.middlewares.api-stripper.stripprefix.prefixes=/api"
     
   worker:
     build:
@@ -27,7 +27,7 @@ services:
     networks:
       - flash_network
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
       REDIS_HOST: redis
     depends_on:
       - postgres
@@ -35,12 +35,12 @@ services:
 
   # Reverse Proxy
   traefik:
-    image: traefik:3.7-alpine
+    image: traefik:v3.7
     command:
       - "--api.insecure=true" #? For accesing the dashboard a big no in PRODUCTION
       - "--providers.docker=true" #? to auto-discover containers in the dokcer 
-      - "--provider.docker.exposedbydefault=false" #? to only expose the label ones
-      - "entrypoint.web.address=:80" #? to listen on port 80
+      - "--providers.docker.exposedbydefault=false" #? to only expose the label ones
+      - "--entrypoints.web.address=:80" #? to listen on port 80
     ports:
       - "80:80"
       - "8080:8080" # Traefik Dashboard (Development ke liye)
@@ -50,7 +50,7 @@ services:
       - flash_network
 
   postgres:
-    image: postgres:18-alpine
+    image: postgres:17-alpine
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -58,11 +58,13 @@ services:
       POSTGRES_DB: ${DB_NAME}
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./infrastructure/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - flash_network
 
   redis:
-    image: redis:8-alpine
+    image: redis:7-alpine
+    restart: always
     volumes:
       - redis_data:/data
     networks:
