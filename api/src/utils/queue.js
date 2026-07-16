@@ -19,4 +19,5 @@ export const addToCheckoutQueue = async (jobData) => {
             delay: 1000 // Delay in milliseconds before retrying
         }
     });
+    return jobData; // Return the job data for reference
 };
