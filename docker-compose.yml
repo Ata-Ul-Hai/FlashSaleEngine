@@ -6,7 +6,7 @@ services:
     networks:
       - flash_network
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_HOST: redis
       PORT: ${PORT}
     depends_on:
@@ -27,7 +27,7 @@ services:
     networks:
       - flash_network
     environment:
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_HOST: redis
     depends_on:
       - postgres

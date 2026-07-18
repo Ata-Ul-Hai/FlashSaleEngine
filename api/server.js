@@ -1,11 +1,16 @@
 import 'dotenv/config';
 import express from 'express';
-import client from './src/config/redis.config.js';
+
+import client from './src/config/redisClient.js';
+import flashSaleRoutes from './src/routes/flashSaleRoutes.js';
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+
+// Middleware
 app.use(express.json());
+app.use('/api', flashSaleRoutes);
 
 // Test Route
 app.get('/health', (req, res) => {
@@ -26,11 +31,3 @@ const startServer = async () => {
 }
 
 startServer();
-
-// post req through traefik
-
-    // check and update redis cache
-    // update postgres
-    // bullMQ
-        // return to user frontend for in process status
-    // worker picks up the job from bullMQ and processes it
