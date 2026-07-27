@@ -22,8 +22,8 @@ const startServer = async () => {
     try {
         await client.connect();
 
-        app.listen(PORT, () => {
-            console.log(`🚀 API Node is running and listening on port ${PORT}`);
+        app.listen(process.env.PORT, () => {
+            console.log(`🚀 API Node is running and listening on port ${process.env.PORT}`);
         });
     } catch (error) {
         console.error('🔥 Critical Failure! Failed to start server:', error);

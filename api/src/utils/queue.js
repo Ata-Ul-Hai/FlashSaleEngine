@@ -10,7 +10,7 @@ export const checkoutQueue = new Queue('checkout-queue', {
 });
 
 export const addToCheckoutQueue = async (jobData) => {
-    await checkoutQueue.add('checkout-job', jobData, {
+    const job = await checkoutQueue.add('checkout-job', jobData, {
         removeOnComplete: true,
         removeOnFail: false, //* kept in the list if failed to debug later!
         attempts: 3, // Number of retry attempts
@@ -19,5 +19,5 @@ export const addToCheckoutQueue = async (jobData) => {
             delay: 1000 // Delay in milliseconds before retrying
         }
     });
-    return jobData; // Return the job data for reference
+    return job; // Return the job data for reference
 };

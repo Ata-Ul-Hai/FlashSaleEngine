@@ -1,4 +1,4 @@
-import {pool} from '../database.js';
+import pool from '../database.js';
 
 export async function processOrder(job) {
     const {user_id, product_id} = job.data;
@@ -8,9 +8,11 @@ export async function processOrder(job) {
     try {
         await client.query('BEGIN');
 
-        const res = await client.query('SELECT stock, version FROM products where id = $1;', [product_id]);
+        const res = await client.query('SELECT stock, version FROM products where id = $1', [product_id]);
 
         if(res.rows.length === 0) {
+            console.log("product_id:", product_id);
+            console.log(res.rows);
             throw new Error('Product not found in Database');
         }
 
@@ -21,7 +23,7 @@ export async function processOrder(job) {
         }
 
         const updateRes = await client.query(
-            'UPDATE products SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2',
+            'UPDATE products SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2 AND stock > 0',
             [product_id, version]
         );
 
