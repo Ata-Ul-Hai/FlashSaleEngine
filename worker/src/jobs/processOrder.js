@@ -11,14 +11,15 @@ export async function processOrder(job) {
         const res = await client.query('SELECT stock, version FROM products where id = $1', [product_id]);
 
         if(res.rows.length === 0) {
-            console.log("product_id:", product_id);
-            console.log(res.rows);
+            // console.log("product_id:", product_id);
+            // console.log(res.rows);
             throw new Error('Product not found in Database');
         }
 
         const {stock, version} = res.rows[0];
 
         if(stock <= 0) {
+            await client.query('ROLLBACK');
             throw new Error('Product not found in Database');
         }
 
@@ -32,16 +33,19 @@ export async function processOrder(job) {
             throw new Error('Optimistic locking collision detected! Retrying...')
         }
 
-        await client.query('INSERT INTO orders (user_id, product_id) VALUES ($1, $2)', [user_id, product_id]);
+        const orderRes = await client.query(
+            "INSERT INTO orders (user_id, product_id, status) VALUES ($1, $2, 'COMPLETED') RETURNING id", 
+            [user_id, product_id]
+        );
 
         await client.query('COMMIT');
-        return { success: true, user_id, product_id };
+        return { success: true, user_id, product_id, order_id: orderRes.rows[0].id };
 
     } catch (error) {
         await client.query('ROLLBACK');
         throw error;
     } finally {
-        await client.release();
+        client.release();
     }
 }
 
