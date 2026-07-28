@@ -12,10 +12,12 @@ const checkoutStatusController = async (req, res) => {
         }
 
         const status = await job.getState(); // Get the current state of the job (e.g., 'completed', 'failed', 'waiting', etc.)
+        const result  = await job.returnvalue // Returned object by worker
 
         return res.status(200).json({
             job_id: job.id,
-            status
+            status,
+            ...(result && { order_details: result })
         });
     } catch (error) {
         console.error("🔥 Job Status Error:", error);
