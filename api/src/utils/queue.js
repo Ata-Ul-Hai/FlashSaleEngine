@@ -11,8 +11,8 @@ export const checkoutQueue = new Queue('checkout-queue', {
 
 export const addToCheckoutQueue = async (jobData) => {
     const job = await checkoutQueue.add('checkout-job', jobData, {
-        removeOnComplete: true,
-        removeOnFail: false, //* kept in the list if failed to debug later!
+        removeOnComplete: { age: 3600, count: 5000 },
+        removeOnFail: { age: 24 * 3600 }, //* kept in the list if failed to debug later!
         attempts: 3, // Number of retry attempts
         backoff: {
             type: 'exponential',
