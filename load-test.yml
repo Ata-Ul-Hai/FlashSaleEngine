@@ -1,0 +1,16 @@
+config:
+  target: "http://localhost:80" 
+  phases:
+    - duration: 10
+      arrivalRate: 500
+  variables:
+    product_id:
+      - "af1a5daf-6e62-40cd-a3ee-ed4e4ac62748"
+scenarios:
+  - name: "Flash Sale Massive Attack"
+    flow:
+      - post:
+          url: "/api/checkout"
+          json:
+            user_id: "{{ $uuid }}"
+            product_id: "{{ product_id }}"
