@@ -8,11 +8,13 @@ export async function processOrder(job) {
     try {
         await client.query('BEGIN');
 
+    // ! Caused Optimistic Lock Starvation
+        /* 
         const res = await client.query('SELECT stock, version FROM products where id = $1', [product_id]);
 
         if(res.rows.length === 0) {
-            // console.log("product_id:", product_id);
-            // console.log(res.rows);
+                // console.log("product_id:", product_id);
+                // console.log(res.rows);
             throw new Error('Product not found in Database');
         }
 
@@ -21,11 +23,13 @@ export async function processOrder(job) {
         if(stock <= 0) {
             await client.query('ROLLBACK');
             throw new Error('Product not found in Database');
-        }
+        } */
 
+    //? Replaced Optimistic Locking with Native Atomic Update. 
+    //? Postgres internally handles the row-level lock. No more collision retry storms!
         const updateRes = await client.query(
-            'UPDATE products SET stock = stock - 1, version = version + 1 WHERE id = $1 AND version = $2 AND stock > 0',
-            [product_id, version]
+            'UPDATE products SET stock = stock - 1 WHERE id = $1 AND stock > 0',
+            [product_id]
         );
 
         if (updateRes.rowCount === 0) {
