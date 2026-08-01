@@ -180,16 +180,16 @@ The system was validated locally using **Artillery**.
 
 ## Test Configuration
 
-- **Concurrent requests:** 5,000
+- **Concurrent requests:** 10,000
 - **Duration:** 10 seconds
 
 ## Results
 
 | Metric | Result |
 |---------|--------|
-| Total Requests | 5,000 |
-| Accepted Orders | 500 |
-| Rejected by Guard Layer | 4,500 |
+| Total Requests | 10,000 |
+| Accepted Orders | 1000 |
+| Rejected by Guard Layer | 9,000 |
 | Overselling | 0 |
 | Server Crashes | 0 |
 
