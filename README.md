@@ -195,6 +195,26 @@ The system was validated locally using **Artillery**.
 
 ---
 
+## 🧠 Key Engineering Decisions
+
+| Decision | Alternatives considered | Why this won |
+|----------|------------------------|--------------|
+| Redis `DECRBY` atomic reservation at the edge | Database-level reservation, check-then-set | Inventory goes negative in memory before a single Postgres connection is spent — in the load test, 9,000 of 10,000 requests were rejected without touching the database |
+| `SADD` duplicate guard | Per-user TTL keys, distributed locks | O(1) membership check with no TTL bookkeeping; the set is the dedupe ledger |
+| HTTP 202 + BullMQ over synchronous checkout | Blocking request until order commits | API connections are freed in milliseconds during the spike; clients poll `status/:job_id` for completion |
+| PostgreSQL native row-level atomic updates | Optimistic locking with retries | No retry storms, no starvation — conflicting workers serialize on the row lock, and the pool is hard-capped at 20 connections so the DB never exhausts |
+| Multiple stateless API replicas behind Traefik | One bigger instance | Round-robin horizontal scale-out; any API container can die without losing in-flight queue jobs since state lives in Redis/Postgres |
+
+## ⚠️ Known Limitations & Trade-offs
+
+- **Load tests ran locally** against Docker Compose — the 10k/1k-rps numbers validate the architecture's shape, not a production cluster's capacity.
+- **Single Redis instance**: the guard layer and the queue share fate — no Sentinel/cluster failover yet.
+- **Reserved-but-unfinished jobs**: if a worker crashes mid-commit, a Redis reservation can leak; a reconciliation sweep that expires stale reservations is the next safety net to add.
+- **Status endpoint is poll-based**: no webhook/SSE push for order completion yet.
+- **Pool size (20) is tuned for the local rig**: needs re-tuning against a managed Postgres instance class.
+
+---
+
 # High-Level Architecture
 
 ```text
